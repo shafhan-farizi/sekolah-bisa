@@ -47,7 +47,7 @@ jobs:
           path: /tmp/deploy-package.tar.gz
           retention-days: 1
 
-  # Tahap 2: Runner di Advan hanya download & ekstrak file jadi
+  # Tahap 2: Advan download & ekstrak file jadi
   deploy-advan:
     needs: build-cloud
     runs-on: self-hosted
@@ -60,12 +60,21 @@ jobs:
 
       - name: Extract & Update Laravel on Advan
         run: |
+          # 1. Ekstrak package
           sudo tar --overwrite --no-same-owner -xzf /tmp/deploy-package.tar.gz -C /var/www/sekolah-bisa/
           rm -f /tmp/deploy-package.tar.gz
           
           cd /var/www/sekolah-bisa
-          php artisan migrate --force
-          php artisan optimize:clear
-          php artisan optimize
+
+          # 2. Perbaiki permission TERLEBIH DAHULU sebelum artisan dijalankan
           sudo chown -R www-data:www-data storage bootstrap/cache database
           sudo chmod -R 775 storage bootstrap/cache database
+          # Khusus SQLite: pastikan file database memiliki izin baca & tulis
+          if [ -f database/database.sqlite ]; then
+            sudo chmod 664 database/database.sqlite
+          fi
+
+          # 3. Jalankan artisan command sebagai user www-data
+          sudo -u www-data php artisan migrate --force
+          sudo -u www-data php artisan optimize:clear
+          sudo -u www-data php artisan optimize
