@@ -1,0 +1,69 @@
+name: CI/CD Build Cloud and Deploy Local
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # Tahap 1: Build berat di server Cloud GitHub (Hemat resource Advan)
+  build-cloud:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install Composer Dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build React Assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Archive Production Package
+        run: |
+          tar --exclude='.git' \
+              --exclude='node_modules' \
+              --exclude='.env' \
+              --exclude='database/database.sqlite' \
+              --exclude='tests' \
+              -czf deploy-package.tar.gz .
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-build
+          path: deploy-package.tar.gz
+          retention-days: 1
+
+  # Tahap 2: Runner di Advan hanya download & ekstrak file jadi
+  deploy-advan:
+    needs: build-cloud
+    runs-on: self-hosted
+    steps:
+      - name: Download Artifact from Cloud
+        uses: actions/download-artifact@v4
+        with:
+          name: laravel-build
+          path: /tmp
+
+      - name: Extract & Update Laravel on Advan
+        run: |
+          tar -xzf /tmp/deploy-package.tar.gz -C /var/www/sekolah-bisa/
+          rm -f /tmp/deploy-package.tar.gz
+          
+          cd /var/www/sekolah-bisa
+          php artisan migrate --force
+          php artisan optimize:clear
+          php artisan optimize
+          sudo chown -R www-data:www-data storage bootstrap/cache database
