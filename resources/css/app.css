@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@theme {
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-serif: "Plus Jakarta Sans", Georgia, Cambria, serif;
+    --font-display: "Fraunces", Georgia, Cambria, serif;
+}
+
+.font-display {
+    font-family: var(--font-display);
+}
