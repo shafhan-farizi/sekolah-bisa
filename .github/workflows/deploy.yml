@@ -37,13 +37,14 @@ jobs:
               --exclude='.env' \
               --exclude='database/database.sqlite' \
               --exclude='tests' \
-              -czf deploy-package.tar.gz .
+              --exclude='deploy-package.tar.gz' \
+              -czf /tmp/deploy-package.tar.gz .
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: laravel-build
-          path: deploy-package.tar.gz
+          path: /tmp/deploy-package.tar.gz
           retention-days: 1
 
   # Tahap 2: Runner di Advan hanya download & ekstrak file jadi
