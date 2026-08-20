@@ -48,6 +48,7 @@ jobs:
           retention-days: 1
 
   # Tahap 2: Runner di Advan hanya download & ekstrak file jadi
+  # Tahap 2: Advan hanya download & ekstrak file jadi
   deploy-advan:
     needs: build-cloud
     runs-on: self-hosted
@@ -60,7 +61,7 @@ jobs:
 
       - name: Extract & Update Laravel on Advan
         run: |
-          tar -xzf /tmp/deploy-package.tar.gz -C /var/www/sekolah-bisa/
+          tar --no-same-owner -xzf /tmp/deploy-package.tar.gz -C /var/www/sekolah-bisa/
           rm -f /tmp/deploy-package.tar.gz
           
           cd /var/www/sekolah-bisa
@@ -68,3 +69,4 @@ jobs:
           php artisan optimize:clear
           php artisan optimize
           sudo chown -R www-data:www-data storage bootstrap/cache database
+          sudo chmod -R 775 storage bootstrap/cache database
